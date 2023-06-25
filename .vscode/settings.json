@@ -1,0 +1,22 @@
+{
+    "workbench.tree.indent": 24,
+    "files.trimTrailingWhitespace": true,
+    "terminal.integrated.rightClickBehavior": "default",
+    "terminal.integrated.scrollback": 5000,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pycodestyleEnabled": false,
+    "python.linting.pycodestyleCategorySeverity.E": "Information",
+    "python.linting.pycodestyleCategorySeverity.W": "Information",
+    "python.linting.pydocstyleArgs": [
+        "--max-line-length=120"
+    ],
+    "[python]": {
+        "editor.formatOnType": true
+    },
+    "editor.formatOnType": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintArgs": [
+        "--disable=missing-function-docstring",
+        "--disable=missing-module-docstring"
+    ]
+}

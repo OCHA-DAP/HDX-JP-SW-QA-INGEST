@@ -16,4 +16,4 @@ if __name__ == "__main__":
      # Connect to Redis
     event_bus = connect_to_hdx_event_bus_with_env_vars()
 
-    event_bus.hdx_listen(event_processor, allowed_event_types=['resource-created', 'resource-data-changed'])
+    event_bus.hdx_listen(event_processor)
