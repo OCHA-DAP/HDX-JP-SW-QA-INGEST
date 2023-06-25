@@ -17,6 +17,11 @@
     "python.linting.enabled": true,
     "python.linting.pylintArgs": [
         "--disable=missing-function-docstring",
-        "--disable=missing-module-docstring"
+        "--disable=missing-class-docstring",
+        "--disable=missing-module-docstring",
+        "--max-line-length=120",
+    ],
+    "editor.rulers": [
+        120
     ]
 }

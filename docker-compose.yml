@@ -3,7 +3,9 @@ version: "3.5"
 # If you already have redis in another docker stack you can specify here that network.
 # And then also specify the network in the 'listener' service
 networks:
-  default:
+  redis-network:
+    name: hdx_local_default
+    external: true
 
 
 
@@ -21,9 +23,14 @@ services:
       REDIS_STREAM_STREAM_NAME: ${REDIS_STREAM_STREAM_NAME:-hdx_event_stream}
       REDIS_STREAM_GROUP_NAME: ${REDIS_STREAM_GROUP_NAME:-hdx_jp_sw_qa_ingest_group}
       REDIS_STREAM_CONSUMER_NAME: ${REDIS_STREAM_CONSUMER_NAME:-hdx_jp_sw_pcode_qa_ingest_1}
-      HDX_URL: ${HDX_URL:-https://feature.data-humdata-org.ahconu.org}
+      GOOGLE_SHEETS_PRIVATE_KEY: ${GOOGLE_SHEETS_PRIVATE_KEY}
+      GOOGLE_SHEETS_CLIENT_EMAIL: ${GOOGLE_SHEETS_CLIENT_EMAIL}
+      GOOGLE_SHEETS_TOKEN_URI: ${GOOGLE_SHEETS_TOKEN_URI}
+      HDX_URL: ${HDX_URL:-https://hdx.website.url}
       HDX_KEY: ${HDX_KEY:-YOUR_HDX_TOKEN}
     entrypoint: [ "tail", "-f", "/dev/null" ]
+    networks:
+      - redis-network
 
   # redis is only needed for testing and locally playing with redis
   # redis:
