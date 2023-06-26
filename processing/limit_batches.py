@@ -82,3 +82,5 @@ def update_gsheet(gc: Client, spreadsheet_id: str, sheet_name: str, pk_column: s
         for col_name, col_position in col_positions.items():
             new_row.append(row_data.get(col_name))
         worksheet.append_row(new_row)
+
+    return True
