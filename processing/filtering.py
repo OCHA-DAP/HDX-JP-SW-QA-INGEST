@@ -12,10 +12,11 @@ def filter_out(context: Context, event: Dict) -> bool:
     filtered_out = _filter_out_users(context, maintainer_id)
     return filtered_out
 
+
 def _filter_out_users(context: Context, user_id: str):
     if user_id:
         if not context.store.exists(USER_SET_KEY):
-            user_ids = fetch_users(context.config)
+            user_ids = fetch_users(context.gsheets, context.config)
             if user_ids:
                 context.store.set_set(USER_SET_KEY, user_ids)
             else:
