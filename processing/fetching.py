@@ -1,15 +1,10 @@
 from typing import Dict
-import gspread
+from gspread.client import Client
 
 USERS_SHEET_NAME = 'User Safelist'
 
 
-def fetch_users(config: Dict):
-    gc = gspread.service_account_from_dict({
-        "private_key": config['GOOGLE_SHEETS_PRIVATE_KEY'],
-        "client_email": config['GOOGLE_SHEETS_CLIENT_EMAIL'],
-        "token_uri": config['GOOGLE_SHEETS_TOKEN_URI'],
-    })
+def fetch_users(gc: Client, config: Dict):
     spread_sheet = gc.open('Local QA Safelist test')
     user_sheet = spread_sheet.worksheet(USERS_SHEET_NAME)
     user_id_column = user_sheet.col_values(1)
