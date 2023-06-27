@@ -1,5 +1,6 @@
 import logging
 from typing import Dict
+from config.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,9 @@ def populate_changed_fields(event: Dict) -> Dict:
         }]
     return event
 
-def populate_with_redis_key(config: Dict, event: Dict) -> Dict:
-    hdx_environment = config['HDX_ENVIRONMENT']
+
+def populate_with_redis_key(config: Config, event: Dict) -> Dict:
+    hdx_environment = config.HDX_ENVIRONMENT
     dataset_name = event.get('dataset_name')
     event_time = event['event_time']
     event_type = event['event_type']

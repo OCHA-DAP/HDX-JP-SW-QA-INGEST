@@ -3,6 +3,7 @@ from typing import Dict
 from processing.helpers import Context
 from processing.limit_batches import limit
 from processing.filtering import filter_out
+from processing.watchlists import flag_if_on_watchlist
 from processing.populating import populate_changed_fields, populate_with_redis_key
 from processing.spliting import split_each_field_own_event
 
@@ -20,6 +21,8 @@ def process(context: Context, event: Dict):
     if should_limit:
         logger.info(f'[batch-limiting] Discarded event of type {event.get("event_type")} for dataset {event.get("dataset_name")}')
         return
+
+    flag_if_on_watchlist(context, event)
 
     populate_changed_fields(event)
 
