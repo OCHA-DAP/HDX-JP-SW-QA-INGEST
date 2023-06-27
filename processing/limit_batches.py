@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Dict
 from processing.helpers import Context
 from gspread.client import Client
@@ -6,36 +7,108 @@ from gspread.exceptions import APIError, WorksheetNotFound
 
 logger = logging.getLogger(__name__)
 
+ONE_HOUR = 60 * 60 * 1000
+MAX_NO_COUNTER = 7
+SHEET_ID = '1DE1alsrR2lgi3H95WXryyr3kPoMmeYHqMEG39rWLGT0'
+SHEET_NAME = 'Too Many Datasets'
+PK_COLUMN = 'id'
+
 
 def limit(context: Context, event: Dict) -> bool:
-    spreadsheet_id = '1DE1alsrR2lgi3H95WXryyr3kPoMmeYHqMEG39rWLGT0'
-    sheet_name = 'Too Many Datasets'
-    pk_column = 'id'
+    """
 
+    :param context: 
+    :param event: 
+    :return: False if ingest flow can continue, True if notifications was sent to google spreadsheet
+    """
+    timestamp = time.time()
+    dataset_obj = event.get('dataset_obj')
+    dataset_id = event.get('dataset_obj').get('id')
+    owner_org_id = dataset_obj.get('owner_org')
+    org_counter_key = 'org-counter-' + owner_org_id
+
+    output_4_redis = _get_output_4_redis(context, dataset_id, dataset_obj, org_counter_key, timestamp)
+
+    context.store.set_object(output_4_redis['key'], output_4_redis['value'])
+
+    if len(output_4_redis.get('value', None).get('datasets_list', [])) <= MAX_NO_COUNTER-1:
+        return False
+    else:
+        # write to google doc
+        _process_notification(context, event)
+        return True
+
+
+def _process_notification(context: Context, event: Dict):
+    """
+
+    :param context:
+    :param event: 
+    """
     row_data = {
-        'id': 'c17eeb2a-9306-4260-b2b6-6ccaeddd231a',
-        'name': 'name2',
-        'package_creator': 'pc2',
-        'updated_by_script': 'ubs2',
-        'owner_org': 'owner_org2',
-        'organization_name': 'org_name2',
-        'title': 'title2',
-        'data_update_frequency': 'duq2',
-        'metadata_created': 'metadata_c2',
-        'metadata_modified': 'metadata_m2',
-        'dataset_date': 'dataset_d2',
-        'event_type': 'etype2',
-        'event_haha': 'busted2',
-        'event_time': 'etime2',
-        'extra_column': 'etime2'
+        'id': event.get('dataset_id'),
+        'name': event.get('dataset_name'),
+        'package_creator': event.get('dataset_obj').get('package_creator'),
+        'updated_by_script': event.get('dataset_obj').get('updated_by_script'),
+        'owner_org': event.get('dataset_obj').get('owner_org'),
+        'organization_name': event.get('dataset_obj').get('organization').get('name'),
+        'title': event.get('dataset_obj').get('title'),
+        'data_update_frequency': event.get('dataset_obj').get('data_update_frequency'),
+        'maintainer': event.get('dataset_obj').get('maintainer'),
+        'metadata_created': event.get('dataset_obj').get('metadata_created'),
+        'metadata_modified': event.get('dataset_obj').get('metadata_modified'),
+        'dataset_date': event.get('dataset_obj').get('dataset_date'),
+        'event_type': event.get('event_type'),
+        'event_time': event.get('event_time')
     }
-
-    update_gsheet(context.gsheets, spreadsheet_id, sheet_name, pk_column, row_data)
-
-    return False
+    _update_gsheet(context.gsheets, SHEET_ID, SHEET_NAME, PK_COLUMN, row_data)
 
 
-def update_gsheet(gc: Client, spreadsheet_id: str, sheet_name: str, pk_column: str, row_data: Dict) -> bool:
+def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, org_counter_key: str,
+                        timestamp: float) -> Dict:
+    """
+
+    :param context: 
+    :param dataset_id: 
+    :param dataset_obj: 
+    :param org_counter_key: 
+    :param timestamp: 
+    :return: 
+    """
+    output_4_redis = {}
+    if context.store.exists(org_counter_key):
+        org_counter_redis = context.store.get_object(org_counter_key)
+        datasets_list = []
+        for item in org_counter_redis.get('datasets_list'):
+            if dataset_id != item.get('id') and timestamp - item.get('timestamp') < ONE_HOUR:
+                datasets_list.append(item)
+        datasets_list.append({"id": dataset_id, "timestamp": timestamp})
+        datasets_list = datasets_list[-MAX_NO_COUNTER:]
+        output_4_redis = {
+            "key": org_counter_key,
+            "value": {"datasets_list": datasets_list}
+        }
+    else:
+        output_4_redis = {
+            "key": org_counter_key,
+            "value": {
+                "datasets_list": [{"id": dataset_obj.get('id'),
+                                   "timestamp": timestamp}]
+            }
+        }
+    return output_4_redis
+
+
+def _update_gsheet(gc: Client, spreadsheet_id: str, sheet_name: str, pk_column: str, row_data: Dict) -> bool:
+    """
+
+    :param gc:
+    :param spreadsheet_id: 
+    :param sheet_name: 
+    :param pk_column: 
+    :param row_data: 
+    :return: 
+    """
     try:
         sh = gc.open_by_key(spreadsheet_id)
     except APIError:
