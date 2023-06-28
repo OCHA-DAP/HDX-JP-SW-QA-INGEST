@@ -17,6 +17,11 @@ class Config:
 
     SPREADSHEET_NAME: str
 
+    SHEET_NAME_LIMIT_BATCHES: str
+    COL_NAME_LIMIT_BATCHES: str
+    DURATION_LIMIT_BATCHES: int
+    MAX_ENTRIES_LIMIT_BATCHES: int
+
     SHEET_NAME_FILTERED_USERS: str
     COL_INDEX_FILTERED_USERS: int
 
@@ -38,6 +43,11 @@ def get_config() -> Config:
             GOOGLE_SHEETS_TOKEN_URI=os.getenv('GOOGLE_SHEETS_TOKEN_URI'),
 
             SPREADSHEET_NAME=os.getenv('SPREADSHEET_NAME', 'Local QA Safelist test'),
+
+            SHEET_NAME_LIMIT_BATCHES=os.getenv('SHEET_NAME_LIMIT_BATCHES', 'Too Many Datasets'),
+            COL_NAME_LIMIT_BATCHES=os.getenv('COL_NAME_LIMIT_BATCHES', 'id'),
+            DURATION_LIMIT_BATCHES=int(os.getenv('DURATION_LIMIT_BATCHES', '3600000')),
+            MAX_ENTRIES_LIMIT_BATCHES=int(os.getenv('MAX_ENTRIES_LIMIT_BATCHES', '7')),
 
             SHEET_NAME_FILTERED_USERS=os.getenv('SHEET_NAME_FILTERED_USERS', 'User Safelist'),
             COL_INDEX_FILTERED_USERS=int(os.getenv('COL_INDEX_FILTERED_USERS', '2')),
