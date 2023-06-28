@@ -24,6 +24,10 @@ class Config:
 
     SHEET_NAME_FILTERED_USERS: str
     COL_INDEX_FILTERED_USERS: int
+    SHEET_NAME_FILTERED_ORGS: str
+    COL_INDEX_FILTERED_ORGS: int
+    SHEET_NAME_FILTERED_DATASETS: str
+    COL_INDEX_FILTERED_DATASETS: int
 
     SHEET_NAME_WATCHED_USERS: str
     COL_INDEX_WATCHED_USERS: int
@@ -51,6 +55,10 @@ def get_config() -> Config:
 
             SHEET_NAME_FILTERED_USERS=os.getenv('SHEET_NAME_FILTERED_USERS', 'User Safelist'),
             COL_INDEX_FILTERED_USERS=int(os.getenv('COL_INDEX_FILTERED_USERS', '2')),
+            SHEET_NAME_FILTERED_ORGS=os.getenv('SHEET_NAME_FILTERED_ORGS', 'Organization Safelist'),
+            COL_INDEX_FILTERED_ORGS=int(os.getenv('COL_INDEX_FILTERED_ORGS', '1')),
+            SHEET_NAME_FILTERED_DATASETS=os.getenv('SHEET_NAME_FILTERED_DATASETS', 'Dataset Safelist'),
+            COL_INDEX_FILTERED_DATASETS=int(os.getenv('COL_INDEX_FILTERED_DATASETS', '1')),
 
             SHEET_NAME_WATCHED_USERS=os.getenv('SHEET_NAME_WATCHED_USERS', 'User Watchlist'),
             COL_INDEX_WATCHED_USERS=int(os.getenv('COL_INDEX_WATCHED_USERS', '2')),
