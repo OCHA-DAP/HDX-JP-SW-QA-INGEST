@@ -7,12 +7,6 @@ from gspread.exceptions import APIError, WorksheetNotFound
 
 logger = logging.getLogger(__name__)
 
-ONE_HOUR = 60 * 60 * 1000
-MAX_NO_COUNTER = 7
-SHEET_ID = '1DE1alsrR2lgi3H95WXryyr3kPoMmeYHqMEG39rWLGT0'
-SHEET_NAME = 'Too Many Datasets'
-PK_COLUMN = 'id'
-
 
 def limit(context: Context, event: Dict) -> bool:
     """
@@ -31,7 +25,7 @@ def limit(context: Context, event: Dict) -> bool:
 
     context.store.set_object(output_4_redis['key'], output_4_redis['value'])
 
-    if len(output_4_redis.get('value', None).get('datasets_list', [])) <= MAX_NO_COUNTER-1:
+    if len(output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES-1:
         return False
     else:
         # write to google doc
@@ -61,7 +55,8 @@ def _process_notification(context: Context, event: Dict):
         'event_type': event.get('event_type'),
         'event_time': event.get('event_time')
     }
-    _update_gsheet(context.gsheets, SHEET_ID, SHEET_NAME, PK_COLUMN, row_data)
+    _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
+                   context.config.COL_NAME_LIMIT_BATCHES, row_data)
 
 
 def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, org_counter_key: str,
@@ -75,15 +70,15 @@ def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, or
     :param timestamp: 
     :return: 
     """
-    output_4_redis = {}
     if context.store.exists(org_counter_key):
         org_counter_redis = context.store.get_object(org_counter_key)
         datasets_list = []
         for item in org_counter_redis.get('datasets_list'):
-            if dataset_id != item.get('id') and timestamp - item.get('timestamp') < ONE_HOUR:
+            if dataset_id != item.get('id') and timestamp - item.get(
+                    'timestamp') < context.config.DURATION_LIMIT_BATCHES:
                 datasets_list.append(item)
         datasets_list.append({"id": dataset_id, "timestamp": timestamp})
-        datasets_list = datasets_list[-MAX_NO_COUNTER:]
+        datasets_list = datasets_list[-context.config.MAX_ENTRIES_LIMIT_BATCHES:]
         output_4_redis = {
             "key": org_counter_key,
             "value": {"datasets_list": datasets_list}
@@ -99,20 +94,20 @@ def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, or
     return output_4_redis
 
 
-def _update_gsheet(gc: Client, spreadsheet_id: str, sheet_name: str, pk_column: str, row_data: Dict) -> bool:
+def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column: str, row_data: Dict) -> bool:
     """
 
     :param gc:
-    :param spreadsheet_id: 
+    :param spreadsheet_name:
     :param sheet_name: 
     :param pk_column: 
     :param row_data: 
     :return: 
     """
     try:
-        sh = gc.open_by_key(spreadsheet_id)
+        sh = gc.open(spreadsheet_name)
     except APIError:
-        logger.info('Error! Invalid spreadsheet ID ({}).'.format(spreadsheet_id))
+        logger.info('Error! Invalid spreadsheet name ({}).'.format(spreadsheet_name))
         return False
 
     try:
