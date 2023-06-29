@@ -75,7 +75,7 @@ def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, or
         datasets_list = []
         for item in org_counter_redis.get('datasets_list'):
             if dataset_id != item.get('id') and timestamp - item.get(
-                    'timestamp') < context.config.DURATION_LIMIT_BATCHES:
+                    'timestamp') < 60 * context.config.DURATION_MINUTES_LIMIT_BATCHES * 1000:
                 datasets_list.append(item)
         datasets_list.append({"id": dataset_id, "timestamp": timestamp})
         datasets_list = datasets_list[-context.config.MAX_ENTRIES_LIMIT_BATCHES:]

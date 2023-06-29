@@ -19,7 +19,7 @@ class Config:
 
     SHEET_NAME_LIMIT_BATCHES: str
     COL_NAME_LIMIT_BATCHES: str
-    DURATION_LIMIT_BATCHES: int
+    DURATION_MINUTES_LIMIT_BATCHES: int
     MAX_ENTRIES_LIMIT_BATCHES: int
 
     SHEET_NAME_FILTERED_USERS: str
@@ -46,7 +46,7 @@ def get_config() -> Config:
 
             SHEET_NAME_LIMIT_BATCHES=os.getenv('SHEET_NAME_LIMIT_BATCHES', 'Too Many Datasets'),
             COL_NAME_LIMIT_BATCHES=os.getenv('COL_NAME_LIMIT_BATCHES', 'id'),
-            DURATION_LIMIT_BATCHES=int(os.getenv('DURATION_LIMIT_BATCHES', '3600000')),
+            DURATION_MINUTES_LIMIT_BATCHES=int(os.getenv('DURATION_MINUTES_LIMIT_BATCHES', '60')),
             MAX_ENTRIES_LIMIT_BATCHES=int(os.getenv('MAX_ENTRIES_LIMIT_BATCHES', '7')),
 
             SHEET_NAME_FILTERED_USERS=os.getenv('SHEET_NAME_FILTERED_USERS', 'User Safelist'),
