@@ -11,14 +11,16 @@ logger = logging.getLogger(__name__)
 def limit(context: Context, event: Dict) -> bool:
     """
 
-    :param context: 
-    :param event: 
+    :param context:
+    :param event:
     :return: False if ingest flow can continue, True if notifications was sent to google spreadsheet
     """
     timestamp = time.time()
     dataset_obj = event.get('dataset_obj')
     dataset_id = event.get('dataset_obj').get('id')
-    owner_org_id = dataset_obj.get('owner_org')
+    owner_org_id = dataset_obj.get('owner_org') or ''
+    if not owner_org_id:
+        logger.error(f'Empty org_id for event {event.get("event_type")} for dataset {event.get("dataset_name")}')
     org_counter_key = 'org-counter-' + owner_org_id
 
     output_4_redis = _get_output_4_redis(context, dataset_id, dataset_obj, org_counter_key, timestamp)
@@ -37,7 +39,7 @@ def _process_notification(context: Context, event: Dict):
     """
 
     :param context:
-    :param event: 
+    :param event:
     """
     row_data = {
         'id': event.get('dataset_id'),
@@ -63,12 +65,12 @@ def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, or
                         timestamp: float) -> Dict:
     """
 
-    :param context: 
-    :param dataset_id: 
-    :param dataset_obj: 
-    :param org_counter_key: 
-    :param timestamp: 
-    :return: 
+    :param context:
+    :param dataset_id:
+    :param dataset_obj:
+    :param org_counter_key:
+    :param timestamp:
+    :return:
     """
     if context.store.exists(org_counter_key):
         org_counter_redis = context.store.get_object(org_counter_key)
@@ -99,10 +101,10 @@ def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column
 
     :param gc:
     :param spreadsheet_name:
-    :param sheet_name: 
-    :param pk_column: 
-    :param row_data: 
-    :return: 
+    :param sheet_name:
+    :param pk_column:
+    :param row_data:
+    :return:
     """
     try:
         sh = gc.open(spreadsheet_name)

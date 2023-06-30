@@ -9,7 +9,7 @@ def split_each_field_own_event(context: Context, event: Dict) -> list:
     # split each dataset metadata field change into its own event
     events = []
     event_type = event['event_type']
-    if event_type == 'dataset-metadata-changed' or event_type == 'dataset-created':
+    if event['changed_fields'] and (event_type == 'dataset-metadata-changed' or event_type == 'dataset-created'):
         for changed_field in event['changed_fields']:
             new_event = event.copy()
             new_event['changed_fields'] = [changed_field]
