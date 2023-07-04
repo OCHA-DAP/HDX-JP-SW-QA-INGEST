@@ -12,6 +12,20 @@ from processing.helpers import Context
 from config.config import get_config, get_gsheetes
 
 
+ALLOWED_EVENT_TYPES = {
+    'dataset-created',
+    'dataset-metadata-changed',
+
+    'resource-deleted',
+    'resource-created',
+    'resource-data-changed',
+    'resource-metadata-changed',
+
+    'spreadsheet-sheet-created',
+    'spreadsheet-sheet-deleted',
+    'spreadsheet-sheet-changed',
+}
+
 key_value_store = connect_to_key_value_store_with_env_vars(expire_in_seconds=60*30)
 config = get_config()
 gc = get_gsheetes()
@@ -30,4 +44,4 @@ if __name__ == "__main__":
     event_bus = connect_to_hdx_event_bus_with_env_vars()
     logger.info('Connected to Redis')
 
-    event_bus.hdx_listen(event_processor)
+    event_bus.hdx_listen(event_processor, allowed_event_types=ALLOWED_EVENT_TYPES)
