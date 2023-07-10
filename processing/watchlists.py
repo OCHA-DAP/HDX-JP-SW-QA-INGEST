@@ -15,7 +15,7 @@ def flag_if_on_watchlist(context: Context, event: Dict):
     on_users_watchlist = _user_in_watchlist(context, username)
     event['n8nFlags']['onUserWatchlist'] = on_users_watchlist
 
-    org_id = event.get('dataset_obj', {}).get('organization', {}).get('id')
+    org_id = event.get('org_id')
     on_org_watchlist = _org_in_watchlist(context, org_id)
     event['n8nFlags']['onOrgWatchlist'] = on_org_watchlist
 
