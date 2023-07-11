@@ -31,7 +31,7 @@ def limit(context: Context, event: Dict) -> bool:
         return False
     else:
         # write to google doc
-        _process_notification(context, event)
+        # _process_notification(context, event)
         return True
 
 
