@@ -12,7 +12,7 @@ def filter_out(context: Context, event: Dict) -> bool:
     username = event.get('initiator_user_name')
     filtered_out = _filter_out_users(context, username)
     if not filtered_out:
-        org_id =  event.get('dataset_obj', {}).get('owner_org')
+        org_id = event.get('org_id')
         filtered_out = _filter_out_orgs(context, org_id)
     if not filtered_out:
         dataset_id = event['dataset_id']
