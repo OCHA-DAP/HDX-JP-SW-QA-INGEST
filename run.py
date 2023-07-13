@@ -26,7 +26,7 @@ ALLOWED_EVENT_TYPES = {
     'spreadsheet-sheet-changed',
 }
 
-key_value_store = connect_to_key_value_store_with_env_vars(expire_in_seconds=60*30)
+key_value_store = connect_to_key_value_store_with_env_vars(expire_in_seconds=60*60*12)
 config = get_config()
 gc = get_gsheetes()
 
