@@ -34,8 +34,6 @@ class Config:
     SHEET_NAME_WATCHED_ORGS: str
     COL_INDEX_WATCHED_ORGS: int
 
-    HDX_ENVIRONMENT: str
-
 CONFIG = None
 
 def get_config() -> Config:
@@ -64,8 +62,6 @@ def get_config() -> Config:
             COL_INDEX_WATCHED_USERS=int(os.getenv('COL_INDEX_WATCHED_USERS', '2')),
             SHEET_NAME_WATCHED_ORGS=os.getenv('SHEET_NAME_WATCHED_ORGS', 'Organization Watchlist'),
             COL_INDEX_WATCHED_ORGS=int(os.getenv('COL_INDEX_WATCHED_ORGS', '1')),
-
-            HDX_ENVIRONMENT=os.getenv('HDX_ENVIRONMENT', 'local')
         )
 
     return CONFIG
