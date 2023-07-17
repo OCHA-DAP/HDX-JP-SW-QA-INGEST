@@ -44,4 +44,4 @@ if __name__ == "__main__":
     event_bus = connect_to_hdx_event_bus_with_env_vars()
     logger.info('Connected to Redis')
 
-    event_bus.hdx_listen(event_processor, allowed_event_types=ALLOWED_EVENT_TYPES)
+    event_bus.hdx_listen(event_processor, allowed_event_types=ALLOWED_EVENT_TYPES, max_iterations=10_000)
