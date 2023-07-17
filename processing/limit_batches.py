@@ -16,14 +16,13 @@ def limit(context: Context, event: Dict) -> bool:
     :return: False if ingest flow can continue, True if notifications was sent to google spreadsheet
     """
     timestamp = time.time()
-    dataset_obj = event.get('dataset_obj')
-    dataset_id = event.get('dataset_obj').get('id')
-    owner_org_id = dataset_obj.get('owner_org') or ''
+    dataset_id = event.get('dataset_id')
+    owner_org_id = event.get('org_id', '')
     if not owner_org_id:
         logger.error(f'Empty org_id for event {event.get("event_type")} for dataset {event.get("dataset_name")}')
     org_counter_key = 'org-counter-' + owner_org_id
 
-    output_4_redis = _get_output_4_redis(context, dataset_id, dataset_obj, org_counter_key, timestamp)
+    output_4_redis = _get_output_4_redis(context, dataset_id, org_counter_key, timestamp)
 
     context.store.set_object(output_4_redis['key'], output_4_redis['value'])
 
@@ -44,16 +43,8 @@ def _process_notification(context: Context, event: Dict):
     row_data = {
         'id': event.get('dataset_id'),
         'name': event.get('dataset_name'),
-        'package_creator': event.get('dataset_obj').get('package_creator'),
-        'updated_by_script': event.get('dataset_obj').get('updated_by_script'),
-        'owner_org': event.get('dataset_obj').get('owner_org'),
-        'organization_name': event.get('dataset_obj').get('organization').get('name'),
-        'title': event.get('dataset_obj').get('title'),
-        'data_update_frequency': event.get('dataset_obj').get('data_update_frequency'),
-        'maintainer': event.get('dataset_obj').get('maintainer'),
-        'metadata_created': event.get('dataset_obj').get('metadata_created'),
-        'metadata_modified': event.get('dataset_obj').get('metadata_modified'),
-        'dataset_date': event.get('dataset_obj').get('dataset_date'),
+        'owner_org': event.get('org_id'),
+        'organization_name': event.get('org_name'),
         'event_type': event.get('event_type'),
         'event_time': event.get('event_time')
     }
@@ -61,13 +52,11 @@ def _process_notification(context: Context, event: Dict):
                    context.config.COL_NAME_LIMIT_BATCHES, row_data)
 
 
-def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, org_counter_key: str,
-                        timestamp: float) -> Dict:
+def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str, timestamp: float) -> Dict:
     """
 
     :param context:
     :param dataset_id:
-    :param dataset_obj:
     :param org_counter_key:
     :param timestamp:
     :return:
@@ -89,8 +78,7 @@ def _get_output_4_redis(context: Context, dataset_id: str, dataset_obj: Dict, or
         output_4_redis = {
             "key": org_counter_key,
             "value": {
-                "datasets_list": [{"id": dataset_obj.get('id'),
-                                   "timestamp": timestamp}]
+                "datasets_list": [{"id": dataset_id, "timestamp": timestamp}]
             }
         }
     return output_4_redis
