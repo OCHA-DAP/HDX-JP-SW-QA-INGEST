@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from typing import Dict
@@ -26,11 +27,44 @@ def limit(context: Context, event: Dict) -> bool:
 
     context.store.set_object(output_4_redis['key'], output_4_redis['value'])
 
-    if len(output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES-1:
+    if len(
+            output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES - 1:
         return False
     else:
-        # write to google doc
-        _process_notification(context, event)
+        GOOGLE_SPREADSHEET_DELAY_TIME_BATCHES = int('1')
+        GOOGLE_SPREADSHEET_DELAY_TIMESTAMP_BATCHES = 'google_spreadsheet_delay_timestamp_batches'
+        GOOGLE_SPREADSHEET_DATASETS_MAP_KEY_BATCHES = 'google_spreadsheet_datasets_map_key_batches'
+
+        if context.store.exists(GOOGLE_SPREADSHEET_DELAY_TIMESTAMP_BATCHES):
+            redis_timestamp = context.store.get_object(GOOGLE_SPREADSHEET_DELAY_TIMESTAMP_BATCHES)
+            expired = (timestamp - redis_timestamp) > GOOGLE_SPREADSHEET_DELAY_TIME_BATCHES * 60
+            row_data = _populate_row_data(event)
+            # push the new dataset dict
+            context.store.set_map(GOOGLE_SPREADSHEET_DATASETS_MAP_KEY_BATCHES,
+                                  {event.get('dataset_id'): json.dumps(row_data)})
+            if expired:
+                # 	update timestamp in REDIS
+                context.store.set_object(GOOGLE_SPREADSHEET_DELAY_TIMESTAMP_BATCHES, timestamp)
+
+                # read with POP from REDIS
+                datasets_map = context.store.get_map_and_delete(GOOGLE_SPREADSHEET_DATASETS_MAP_KEY_BATCHES)
+                # 	write to spreadsheet
+                # datasets_map
+                _process_notification(context, event)
+                return True
+            else:
+                # 	already pushed the current information
+                return False
+        else:
+            redis_timestamp = timestamp
+            context.store.set_object(GOOGLE_SPREADSHEET_DELAY_TIMESTAMP_BATCHES, redis_timestamp)
+            row_data = _populate_row_data(event)
+            context.store.set_map(GOOGLE_SPREADSHEET_DATASETS_MAP_KEY_BATCHES,
+                                  {event.get('dataset_id'): json.dumps(row_data)})
+            return False
+
+        # # write to google spreadsheet
+        # _process_notification(context, event)
         return True
 
 
@@ -40,6 +74,17 @@ def _process_notification(context: Context, event: Dict):
     :param context:
     :param event:
     """
+    row_data = _populate_row_data(event)
+    _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
+                   context.config.COL_NAME_LIMIT_BATCHES, row_data)
+
+
+def _populate_row_data(event: Dict):
+    """
+
+    :param event:
+    :return:
+    """
     row_data = {
         'id': event.get('dataset_id'),
         'name': event.get('dataset_name'),
@@ -48,8 +93,7 @@ def _process_notification(context: Context, event: Dict):
         'event_type': event.get('event_type'),
         'event_time': event.get('event_time')
     }
-    _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
-                   context.config.COL_NAME_LIMIT_BATCHES, row_data)
+    return row_data
 
 
 def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str, timestamp: float) -> Dict:
@@ -66,7 +110,7 @@ def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str,
         datasets_list = []
         for item in org_counter_redis.get('datasets_list'):
             if dataset_id != item.get('id') and timestamp - item.get(
-                    'timestamp') < 60 * context.config.DURATION_MINUTES_LIMIT_BATCHES * 1000:
+                    'timestamp') < 60 * context.config.DURATION_MINUTES_LIMIT_BATCHES:
                 datasets_list.append(item)
         datasets_list.append({"id": dataset_id, "timestamp": timestamp})
         datasets_list = datasets_list[-context.config.MAX_ENTRIES_LIMIT_BATCHES:]
