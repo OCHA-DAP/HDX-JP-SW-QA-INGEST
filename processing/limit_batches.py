@@ -1,6 +1,7 @@
+import json
 import logging
 import time
-from typing import Dict
+from typing import Dict, Mapping, List
 from processing.helpers import Context
 from gspread.client import Client
 from gspread.exceptions import APIError, WorksheetNotFound
@@ -22,23 +23,62 @@ def limit(context: Context, event: Dict) -> bool:
         logger.error(f'Empty org_id for event {event.get("event_type")} for dataset {event.get("dataset_name")}')
     org_counter_key = 'org-counter-' + owner_org_id
 
+    batches_duration_between_writing = 1
+    batches_timestamp_redis_key = 'google_spreadsheet_delay_timestamp_batches'
+    batches_datasets_redis_key = 'google_spreadsheet_datasets_map_key_batches'
+    batches_datasets_fields = ['dataset_id', 'dataset_name', 'org_id', 'org_name', 'event_type', 'event_time']
+
     output_4_redis = _get_output_4_redis(context, dataset_id, org_counter_key, timestamp)
 
     context.store.set_object(output_4_redis['key'], output_4_redis['value'])
 
-    if len(output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES-1:
+    if len(
+            output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES - 1:
         return False
     else:
-        # write to google doc
-        _process_notification(context, event)
-        return True
+        cached_data = {key: event[key] for key in batches_datasets_fields}
+
+        if context.store.exists(batches_timestamp_redis_key):
+            redis_timestamp = context.store.get_object(batches_timestamp_redis_key)
+            expired = (timestamp - redis_timestamp) > batches_duration_between_writing * 60
+            # push the new dataset dict
+            context.store.set_map(batches_datasets_redis_key, {event.get('dataset_id'): json.dumps(cached_data)})
+            if expired:
+                # update timestamp in Redis
+                context.store.set_object(batches_timestamp_redis_key, timestamp)
+                # read with POP from Redis
+                datasets_map = context.store.get_map_and_delete(batches_datasets_redis_key)
+                # write to spreadsheet
+                _process_notification(context, datasets_map)
+                return True
+            else:
+                # already pushed the current information
+                return False
+        else:
+            redis_timestamp = timestamp
+            context.store.set_object(batches_timestamp_redis_key, redis_timestamp)
+            context.store.set_map(batches_datasets_redis_key, {event.get('dataset_id'): json.dumps(cached_data)})
+            return False
 
 
-def _process_notification(context: Context, event: Dict):
+def _process_notification(context: Context, events: Mapping):
     """
 
     :param context:
+    :param events:
+    """
+    rows = []
+    for dataset_id, event in events.items():
+        rows.append(_populate_row_data(json.loads(event)))
+    _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
+                   context.config.COL_NAME_LIMIT_BATCHES, rows)
+
+
+def _populate_row_data(event: Dict):
+    """
+
     :param event:
+    :return:
     """
     row_data = {
         'id': event.get('dataset_id'),
@@ -48,8 +88,7 @@ def _process_notification(context: Context, event: Dict):
         'event_type': event.get('event_type'),
         'event_time': event.get('event_time')
     }
-    _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
-                   context.config.COL_NAME_LIMIT_BATCHES, row_data)
+    return row_data
 
 
 def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str, timestamp: float) -> Dict:
@@ -66,7 +105,7 @@ def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str,
         datasets_list = []
         for item in org_counter_redis.get('datasets_list'):
             if dataset_id != item.get('id') and timestamp - item.get(
-                    'timestamp') < 60 * context.config.DURATION_MINUTES_LIMIT_BATCHES * 1000:
+                    'timestamp') < 60 * context.config.DURATION_MINUTES_LIMIT_BATCHES:
                 datasets_list.append(item)
         datasets_list.append({"id": dataset_id, "timestamp": timestamp})
         datasets_list = datasets_list[-context.config.MAX_ENTRIES_LIMIT_BATCHES:]
@@ -84,14 +123,14 @@ def _get_output_4_redis(context: Context, dataset_id: str, org_counter_key: str,
     return output_4_redis
 
 
-def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column: str, row_data: Dict) -> bool:
+def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column: str, rows_data: List) -> bool:
     """
 
     :param gc:
     :param spreadsheet_name:
     :param sheet_name:
     :param pk_column:
-    :param row_data:
+    :param rows_data:
     :return:
     """
     try:
@@ -106,10 +145,6 @@ def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column
         logger.info('Error! Worksheet ({}) not found.'.format(sheet_name))
         return False
 
-    if pk_column not in row_data.keys():
-        logger.info('Error! Data ({}) doesn\'t contain PK ({}).'.format(', '.join(row_data.keys()), pk_column))
-        return False
-
     column_names = worksheet.row_values('1')
     if pk_column not in column_names:
         logger.info('Error! Column names ({}) doesn\'t contain PK ({}).'.format(', '.join(column_names), pk_column))
@@ -119,26 +154,17 @@ def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column
     for column_name in column_names:
         col_positions[column_name] = column_names.index(column_name) + 1
 
-    pk_value = row_data.get(pk_column, None)
-    if pk_value:
-        pk_cell = worksheet.find(pk_value)
-    else:
-        logger.info('Error! PK value ({}) is empty.'.format(pk_column))
-        return False
+    new_rows = []
+    for row_data in rows_data:
+        if pk_column not in row_data.keys():
+            logger.info('Error! Data ({}) doesn\'t contain PK ({}).'.format(', '.join(row_data.keys()), pk_column))
+            return False
 
-    if pk_cell:
-        if pk_cell.col == col_positions.get(pk_column):
-            del row_data[pk_column]
-
-            row_position = pk_cell.row
-            for col_name, col_value in row_data.items():
-                col_position = col_positions.get(col_name, None)
-                if col_position:
-                    worksheet.update_cell(row_position, col_position, col_value)
-    else:
         new_row = []
         for col_name, col_position in col_positions.items():
             new_row.append(row_data.get(col_name))
-        worksheet.append_row(new_row)
+        new_rows.append(new_row)
+
+    worksheet.append_rows(new_rows)
 
     return True
