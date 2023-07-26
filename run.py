@@ -14,6 +14,7 @@ from config.config import get_config, get_gsheetes
 
 ALLOWED_EVENT_TYPES = {
     'dataset-created',
+    'dataset-deleted',
     'dataset-metadata-changed',
 
     'resource-deleted',
