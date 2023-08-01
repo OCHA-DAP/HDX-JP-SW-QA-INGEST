@@ -10,6 +10,7 @@ from hdx_redis_lib import connect_to_hdx_event_bus_with_env_vars, connect_to_key
 from processing.main import process
 from processing.helpers import Context
 from config.config import get_config, get_gsheetes
+from helper.util import do_nothing_for_ever
 
 
 ALLOWED_EVENT_TYPES = {
@@ -27,22 +28,29 @@ ALLOWED_EVENT_TYPES = {
     'spreadsheet-sheet-changed',
 }
 
-key_value_store = connect_to_key_value_store_with_env_vars(expire_in_seconds=60*60*12)
 config = get_config()
-gc = get_gsheetes()
-
-
-def event_processor(event):
-    logger.info('Received event: ' + json.dumps(event, ensure_ascii=False, indent=4))
-
-    context = Context(store=key_value_store, config=config, gsheets=gc)
-    process(context, event)
-
-    return True, 'Success'
 
 if __name__ == "__main__":
-     # Connect to Redis
-    event_bus = connect_to_hdx_event_bus_with_env_vars()
-    logger.info('Connected to Redis')
+    if not config.WORKER_ENABLED:
+        do_nothing_for_ever()
+        key_value_store = None
+        gc = None
 
-    event_bus.hdx_listen(event_processor, allowed_event_types=ALLOWED_EVENT_TYPES, max_iterations=10_000)
+    else:
+        key_value_store = connect_to_key_value_store_with_env_vars(expire_in_seconds=60*60*12)
+        gc = get_gsheetes()
+
+
+        def event_processor(event):
+            logger.info('Received event: ' + json.dumps(event, ensure_ascii=False, indent=4))
+
+            context = Context(store=key_value_store, config=config, gsheets=gc)
+            process(context, event)
+
+            return True, 'Success'
+
+        # Connect to Redis
+        event_bus = connect_to_hdx_event_bus_with_env_vars()
+        logger.info('Connected to Redis')
+
+        event_bus.hdx_listen(event_processor, allowed_event_types=ALLOWED_EVENT_TYPES, max_iterations=10_000)

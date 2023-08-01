@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Config:
     # pylint: disable=invalid-name
+    WORKER_ENABLED: bool
     GOOGLE_SHEETS_PRIVATE_KEY: str
     GOOGLE_SHEETS_CLIENT_EMAIL: str
     GOOGLE_SHEETS_TOKEN_URI: str
@@ -40,6 +41,7 @@ def get_config() -> Config:
     global CONFIG
     if not CONFIG:
         CONFIG = Config(
+            WORKER_ENABLED=os.getenv('WORKER_ENABLED')=='true',
             GOOGLE_SHEETS_PRIVATE_KEY=os.getenv('GOOGLE_SHEETS_PRIVATE_KEY'),
             GOOGLE_SHEETS_CLIENT_EMAIL=os.getenv('GOOGLE_SHEETS_CLIENT_EMAIL'),
             GOOGLE_SHEETS_TOKEN_URI=os.getenv('GOOGLE_SHEETS_TOKEN_URI'),
