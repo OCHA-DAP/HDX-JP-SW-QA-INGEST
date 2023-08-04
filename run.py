@@ -50,7 +50,7 @@ if __name__ == "__main__":
             process(context, event)
             end_time = datetime.datetime.now()
             elapsed_time = end_time - start_time
-            logger.info(f'Finished processing event'
+            logger.info(f'Finished processing event '
                         f'of type {event["event_type"]} from {event["event_time"]} in {str(elapsed_time)}')
 
             return True, 'Success'
