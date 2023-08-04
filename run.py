@@ -4,6 +4,7 @@ logging.config.fileConfig('logging.conf')
 logger = logging.getLogger(__name__)
 
 
+import datetime
 import json
 
 from hdx_redis_lib import connect_to_hdx_event_bus_with_env_vars, connect_to_key_value_store_with_env_vars
@@ -43,9 +44,14 @@ if __name__ == "__main__":
 
         def event_processor(event):
             logger.info('Received event: ' + json.dumps(event, ensure_ascii=False, indent=4))
+            start_time = datetime.datetime.now()
 
             context = Context(store=key_value_store, config=config, gsheets=gc)
             process(context, event)
+            end_time = datetime.datetime.now()
+            elapsed_time = end_time - start_time
+            logger.info(f'Finished processing event'
+                        f'of type {event["event_type"]} from {event["event_time"]} in {str(elapsed_time)}')
 
             return True, 'Success'
 
