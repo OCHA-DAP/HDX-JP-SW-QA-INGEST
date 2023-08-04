@@ -4,6 +4,8 @@ import logging
 import os
 import gspread
 import gspread.client as gs_client
+import slack_sdk
+import slack_sdk.errors as slack_errors
 
 
 logger = logging.getLogger(__name__)
@@ -81,3 +83,28 @@ def get_gsheetes() -> gs_client.Client:
     except Exception as exc:
         logger.error(f'Exception of type {type(exc).__name__} while creating google sheets client: {str(exc)}')
         raise
+
+
+class SlackClientWrapper():
+    def __init__(self) -> None:
+        self.slack_channel = os.getenv('HDX_N8N_SLACK_NOTIFICATION_CHANNEL')
+        # self.slack_channel = 'test-channel'
+
+
+        self.slack_client = None
+        token = os.getenv('HDX_N8N_SLACK_CENTRE_ACCESS_TOKEN')
+        if token:
+            self.slack_client = slack_sdk.WebClient(token=token)
+            logger.debug('Slack client initialized')
+
+    def post_to_slack_channel(self, message: str):
+        if self.slack_client:
+            try:
+                text = f'[QA INGEST] {message}'
+                response = self.slack_client.chat_postMessage(channel=self.slack_channel, text=text)
+            except slack_errors.SlackApiError as e:
+                # You will get a SlackApiError if "ok" is False
+                # assert e.response["ok"] is False
+                logger.error(f"Got an error: {e.response['error']}")
+        else:
+            logger.info(f'[instead of slack] {message}')
