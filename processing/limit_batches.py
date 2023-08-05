@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Dict, Mapping, List
+from typing import Dict, List
 from processing.helpers import Context
 from gspread.client import Client
 from gspread.exceptions import APIError, WorksheetNotFound
@@ -23,6 +23,7 @@ def limit(context: Context, event: Dict) -> bool:
         logger.error(f'Empty org_id for event {event.get("event_type")} for dataset {event.get("dataset_name")}')
     org_counter_key = 'org-counter-' + owner_org_id
 
+    # We only want to write to Google Sheets every 'batches_duration_between_writing' minutes
     batches_duration_between_writing = 1
     batches_timestamp_redis_key = 'google_spreadsheet_delay_timestamp_batches'
     batches_datasets_redis_key = 'google_spreadsheet_datasets_map_key_batches'
@@ -32,44 +33,55 @@ def limit(context: Context, event: Dict) -> bool:
 
     context.store.set_object(output_4_redis['key'], output_4_redis['value'])
 
+    return_value = False
+
     if len(
             output_4_redis.get('value', None).get('datasets_list', [])) <= context.config.MAX_ENTRIES_LIMIT_BATCHES - 1:
-        return False
+        return_value = False
+    # We have TOO MANY dataset events for the same org in the last DURATION_MINUTES_LIMIT_BATCHES minutes.
+    # We need to block these events
     else:
         cached_data = {key: event[key] for key in batches_datasets_fields}
+        logger.warning(f'Limiting N8N/JIRA because of too many events for org "{event["org_name"]}". '
+                       f'Blocking dataset "{event["dataset_name"]}"')
 
-        if context.store.exists(batches_timestamp_redis_key):
-            redis_timestamp = context.store.get_object(batches_timestamp_redis_key)
-            expired = (timestamp - redis_timestamp) > batches_duration_between_writing * 60
-            # push the new dataset dict
-            context.store.set_map(batches_datasets_redis_key, {event.get('dataset_id'): json.dumps(cached_data)})
-            if expired:
-                # update timestamp in Redis
-                context.store.set_object(batches_timestamp_redis_key, timestamp)
-                # read with POP from Redis
-                datasets_map = context.store.get_map_and_delete(batches_datasets_redis_key)
+        # if there's no batch of datasets in redis then we need to update the timestamp to say that we're starting now
+        if not context.store.exists(batches_datasets_redis_key):
+            context.store.set_object(batches_timestamp_redis_key, timestamp)
+        # push the new dataset dict
+        context.store.set_map(batches_datasets_redis_key, {event.get('dataset_id'): json.dumps(cached_data)})
+        return_value = True
+
+
+    # Always check if there's something to push to 'Too Many Datasets' google sheet
+    redis_timestamp = context.store.get_object(batches_timestamp_redis_key)
+    if redis_timestamp:
+        expired = (timestamp - redis_timestamp) > batches_duration_between_writing * 60
+        if expired:
+            # update timestamp in Redis
+            context.store.set_object(batches_timestamp_redis_key, timestamp)
+            # read with POP from Redis
+            datasets_map = context.store.get_map_and_delete(batches_datasets_redis_key)
+            if datasets_map:
+                dataset_infos = [json.loads(item) for item in datasets_map.values()]
+                list_of_datasets_as_string = ', '.join((item['dataset_name'] for item in dataset_infos))
+                logger.info('The following datasets will be pushed to the "Too Many Datasets" '
+                            f'google sheet: {list_of_datasets_as_string}')
                 # write to spreadsheet
-                _process_notification(context, datasets_map)
-                return True
-            else:
-                # already pushed the current information
-                return False
-        else:
-            redis_timestamp = timestamp
-            context.store.set_object(batches_timestamp_redis_key, redis_timestamp)
-            context.store.set_map(batches_datasets_redis_key, {event.get('dataset_id'): json.dumps(cached_data)})
-            return False
+                _process_notification(context, dataset_infos)
+
+    return return_value
 
 
-def _process_notification(context: Context, events: Mapping):
+def _process_notification(context: Context, events: List):
     """
 
     :param context:
     :param events:
     """
     rows = []
-    for dataset_id, event in events.items():
-        rows.append(_populate_row_data(json.loads(event)))
+    for event in events:
+        rows.append(_populate_row_data(event))
     _update_gsheet(context.gsheets, context.config.SPREADSHEET_NAME, context.config.SHEET_NAME_LIMIT_BATCHES,
                    context.config.COL_NAME_LIMIT_BATCHES, rows)
 
