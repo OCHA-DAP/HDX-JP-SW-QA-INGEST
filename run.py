@@ -24,9 +24,9 @@ ALLOWED_EVENT_TYPES = {
     'resource-data-changed',
     'resource-metadata-changed',
 
-    'spreadsheet-sheet-created',
-    'spreadsheet-sheet-deleted',
-    'spreadsheet-sheet-changed',
+    # 'spreadsheet-sheet-created',
+    # 'spreadsheet-sheet-deleted',
+    # 'spreadsheet-sheet-changed',
 }
 
 config = get_config()
