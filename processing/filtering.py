@@ -25,15 +25,18 @@ def filter_out(context: Context, event: Dict) -> bool:
 def _filter_out_users(context: Context, username: str) -> bool:
     return generic_string_in_set_with_cache(context, username, REDIS_KEY_CACHE_FILTERED_USERS,
                                             context.config.SHEET_NAME_FILTERED_USERS,
-                                            context.config.COL_INDEX_FILTERED_USERS)
+                                            context.config.COL_INDEX_FILTERED_USERS,
+                                            expire_in_seconds=60*60)
 
 
 def _filter_out_orgs(context: Context, org_id: str) -> bool:
     return generic_string_in_set_with_cache(context, org_id, REDIS_KEY_CACHE_FILTERED_ORGS,
                                             context.config.SHEET_NAME_FILTERED_ORGS,
-                                            context.config.COL_INDEX_FILTERED_ORGS)
+                                            context.config.COL_INDEX_FILTERED_ORGS,
+                                            expire_in_seconds=60*60)
 
 def _filter_out_datasets(context: Context, dataset_id: str) -> bool:
     return generic_string_in_set_with_cache(context, dataset_id, REDIS_KEY_CACHE_FILTERED_DATASETS,
                                             context.config.SHEET_NAME_FILTERED_DATASETS,
-                                            context.config.COL_INDEX_FILTERED_DATASETS)
+                                            context.config.COL_INDEX_FILTERED_DATASETS,
+                                            expire_in_seconds=60*60)
