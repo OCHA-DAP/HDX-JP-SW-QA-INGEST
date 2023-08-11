@@ -4,6 +4,37 @@ Processes the events before they are used by the N8N QA workflow.
 
 ---
 
+## Configuration
+
+The following environmental variables must be set:
+
+ **name**                           | **type** | **default value**      | **description**                                                                                                
+------------------------------------|----------|------------------------|----------------------------------------------------------------------------------------------------------------
+ **WORKER_ENABLED**                 | str      |                        | Must be set to `'true'` to enable the worker                                                                            
+ **GOOGLE_SHEETS_PRIVATE_KEY**      | str      |                        | Service Account `private_key` _(including `\n` characters & comments)_                                                        
+ **GOOGLE_SHEETS_CLIENT_EMAIL**     | str      |                        | Service Account `client_email` _(needs to have access to the `SPREADSHEET_NAME` file)_                                  
+ **GOOGLE_SHEETS_TOKEN_URI**        | str      |                        | Service Account `token_uri`                                                                                    
+ **SPREADSHEET_NAME**               | str      | Local QA Safelist test | The name of the spreadsheet containing the other worksheets                                                    
+ **SHEET_NAME_LIMIT_BATCHES**       | str      | Too Many Datasets      | Worksheet name used for limiting batches                                                                       
+ **COL_NAME_LIMIT_BATCHES**         | str      | id                     | Column name used for limiting batches                                                                          
+ **DURATION_MINUTES_LIMIT_BATCHES** | int      | 60                     | Batch limiting applies if we have too many dataset events for the same organization in the specified minutes
+ **MAX_ENTRIES_LIMIT_BATCHES**      | int      | 7                      | Maximum number of datasets per organization before limiting them                                              
+ **SHEET_NAME_FILTERED_USERS**      | str      | User Safelist          | Worksheet name for user safelist                                                                               
+ **COL_INDEX_FILTERED_USERS**       | int      | 2                      | The index of the column containig the value                                                                    
+ **SHEET_NAME_FILTERED_ORGS**       | str      | Organization Safelist  | Worksheet name for organization safelist                                                                       
+ **COL_INDEX_FILTERED_ORGS**        | int      | 1                      | The index of the column containig the value                                                                    
+ **SHEET_NAME_FILTERED_DATASETS**   | str      | Dataset Safelist       | Worksheet name for organization safelist                                                                       
+ **COL_INDEX_FILTERED_DATASETS**    | int      | 1                      | The index of the column containig the value                                                                    
+ **SHEET_NAME_WATCHED_USERS**       | str      | User Watchlist         | Worksheet name for user watchlist                                                                              
+ **COL_INDEX_WATCHED_USERS**        | int      | 2                      | The index of the column containig the value                                                                    
+ **SHEET_NAME_WATCHED_ORGS**        | str      | Organization Watchlist | Worksheet name for organization watchlist                                                                      
+ **COL_INDEX_WATCHED_ORGS**         | int      | 1                      | The index of the column containig the value                                                                    
+
+
+
+
+---
+
 ## Pre-processing walkthrough
 
 After connecting to the HDX Event Bus, it listens for events and processes incoming changes up to a defined maximum
