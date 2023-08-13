@@ -5,6 +5,7 @@
         "github.vscode-github-actions",
         "ms-python.pylint",
         "ms-azuretools.vscode-docker",
-        "njpwerner.autodocstring"
+        "njpwerner.autodocstring",
+        "ms-python.black-formatter"
     ]
 }
