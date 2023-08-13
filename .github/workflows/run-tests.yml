@@ -24,6 +24,6 @@ jobs:
           pip install -r requirements.txt
           pip install -r dev-requirements.txt
       - name: Test with pytest
-        run: pytest
+        run: pytest --cov=.
         env:
           REDIS_STREAM_HOST: localhost
