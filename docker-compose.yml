@@ -16,8 +16,9 @@ services:
     volumes:
       - ".:/srv/listener"
     environment:
+      # LISTENER_MODE: ${LISTENER_MODE:-true}
+      WORKER_ENABLED: ${WORKER_ENABLED:-true}
       REDIS_STREAM_PORT: ${REDIS_STREAM_PORT:-6379}
-      LISTENER_MODE: ${LISTENER_MODE:-true}
       REDIS_STREAM_HOST: ${REDIS_STREAM_HOST:-redis}
       REDIS_STREAM_DB: ${REDIS_STREAM_DB:-7}
       REDIS_STREAM_STREAM_NAME: ${REDIS_STREAM_STREAM_NAME:-hdx_event_stream}
