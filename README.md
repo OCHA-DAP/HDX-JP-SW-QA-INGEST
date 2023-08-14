@@ -29,7 +29,12 @@ The following environmental variables must be set:
  **COL_INDEX_WATCHED_USERS**        | int      | 2                      | The index of the column containig the value                                                                    
  **SHEET_NAME_WATCHED_ORGS**        | str      | Organization Watchlist | Worksheet name for organization watchlist                                                                      
  **COL_INDEX_WATCHED_ORGS**         | int      | 1                      | The index of the column containig the value                                                                    
-
+ **REDIS_STREAM_HOST**              | str      | redis                  | The hostname of the redis service to be used for redis streams
+ **REDIS_STREAM_PORT**              | int      | 6379                   | The port for the redis service to be used for redis streams
+ **REDIS_STREAM_DB**                | int      | 7                      | The database in the redis service to be used for redis streams
+ **REDIS_STREAM_STREAM_NAME**       | int      | None                   | The name (key) of the redis streams
+ **REDIS_STREAM_GROUP_NAME**        | int      | None                   | The name for the redis stream consumer group to which this worker (the consumer) will belong
+ **REDIS_STREAM_CONSUMER_NAME**     | int      | None                   | The name of the consumer (the name of this worker) inside the consumer group
 
 
 
