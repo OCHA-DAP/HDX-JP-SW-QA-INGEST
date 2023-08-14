@@ -32,9 +32,9 @@ The following environmental variables must be set:
  **REDIS_STREAM_HOST**              | str      | redis                  | The hostname of the redis service to be used for redis streams
  **REDIS_STREAM_PORT**              | int      | 6379                   | The port for the redis service to be used for redis streams
  **REDIS_STREAM_DB**                | int      | 7                      | The database in the redis service to be used for redis streams
- **REDIS_STREAM_STREAM_NAME**       | int      | None                   | The name (key) of the redis streams
- **REDIS_STREAM_GROUP_NAME**        | int      | None                   | The name for the redis stream consumer group to which this worker (the consumer) will belong
- **REDIS_STREAM_CONSUMER_NAME**     | int      | None                   | The name of the consumer (the name of this worker) inside the consumer group
+ **REDIS_STREAM_STREAM_NAME**       | int      |                        | The name (key) of the redis streams
+ **REDIS_STREAM_GROUP_NAME**        | int      |                        | The name for the redis stream consumer group to which this worker (the consumer) will belong
+ **REDIS_STREAM_CONSUMER_NAME**     | int      |                        | The name of the consumer (the name of this worker) inside the consumer group
 
 
 
