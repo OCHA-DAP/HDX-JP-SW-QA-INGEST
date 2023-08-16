@@ -43,15 +43,15 @@ def test_flag_if_on_watchlist(fetch_values_mock, context, clean_redis):
     assert not event.get('n8nFlags')
     flag_if_on_watchlist(context, event)
     assert event.get('n8nFlags')
-    assert event.get('n8nFlags').get('onUserWatchlist') is not True
-    assert event.get('n8nFlags').get('onOrgWatchlist') is not True
+    assert bool(event.get('n8nFlags').get('onUserWatchlist')) is False
+    assert bool(event.get('n8nFlags').get('onOrgWatchlist')) is False
 
     event_with_watchlisted_user = _generate_test_event()
     event_with_watchlisted_user['initiator_user_name'] = 'watchlisted-test-user'
     flag_if_on_watchlist(context, event_with_watchlisted_user)
-    assert event_with_watchlisted_user.get('n8nFlags').get('onUserWatchlist', False) is True
+    assert bool(event_with_watchlisted_user.get('n8nFlags').get('onUserWatchlist', False)) is True
 
     event_with_watchlisted_org = _generate_test_event()
     event_with_watchlisted_org['org_id'] = 'watchlisted-test-org-id'
     flag_if_on_watchlist(context, event_with_watchlisted_org)
-    assert event_with_watchlisted_org.get('n8nFlags').get('onOrgWatchlist', False) is True
+    assert bool(event_with_watchlisted_org.get('n8nFlags').get('onOrgWatchlist', False)) is True
