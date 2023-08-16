@@ -1,4 +1,5 @@
 [![Run tests](https://github.com/OCHA-DAP/HDX-JP-SW-QA-INGEST/actions/workflows/run-tests.yml/badge.svg)](https://github.com/OCHA-DAP/HDX-JP-SW-QA-INGEST/actions/workflows/run-tests.yml)
+[![codecov](https://codecov.io/gh/OCHA-DAP/HDX-JP-SW-QA-INGEST/graph/badge.svg?token=H8NNNDQPZ9)](https://codecov.io/gh/OCHA-DAP/HDX-JP-SW-QA-INGEST)
 
 # QA Ingestion / Pre-processor
 
