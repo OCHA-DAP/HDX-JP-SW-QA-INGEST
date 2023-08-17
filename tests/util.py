@@ -14,3 +14,11 @@ def fetch_values_wrapper(gsheets: Client, spreadsheet_name: str, worksheet_name:
         return [
             'blocked-test-org-id'
         ]
+    elif worksheet_name == 'User Watchlist':
+        return [
+            'watchlisted-test-user'
+        ]
+    elif worksheet_name == 'Organization Watchlist':
+        return [
+            'watchlisted-test-org-id'
+        ]
