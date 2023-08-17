@@ -1,6 +1,7 @@
 import logging
 import mock
-from processing.limit_batches import limit
+import time
+from processing.limit_batches import limit, _get_output_4_redis, _populate_row_data
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,10 @@ def test_valid_limit_batches(context, clean_redis):
         event['dataset_id'] = '%s_%s' % (event['dataset_id'], index)
         should_limit = limit(context, event)
 
+        timestamp = time.time()
+        output_4_redis = _get_output_4_redis(context, event['dataset_id'], 'org-counter-' + event['org_id'], timestamp)
+        assert any(d['id'] == event['dataset_id'] for d in output_4_redis.get('value', None).get('datasets_list', []))
+
     if max_events <= no_events:
         assert should_limit is True, 'batch should be limited'
     else:
@@ -64,3 +69,16 @@ def test_invalid_limit_batches_diff_org(context, clean_redis):
         should_limit = limit(context, event)
 
     assert should_limit is False, 'batch shouldn\'t be limited because we have diff orgs'
+
+
+def test_gsheets_row_content(context, clean_redis):
+    event = _generate_test_event()
+    row = _populate_row_data(event)
+
+    assert len(row) == 6
+    assert 'id' in row
+    assert 'name' in row
+    assert 'owner_org' in row
+    assert 'organization_name' in row
+    assert 'event_type' in row
+    assert 'event_time' in row
