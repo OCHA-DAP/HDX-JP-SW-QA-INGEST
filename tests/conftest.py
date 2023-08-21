@@ -3,7 +3,7 @@ import os
 
 from hdx_redis_lib import RedisKeyValueStore, connect_to_key_value_store_with_env_vars
 
-from config.config import Config, get_config
+from config.config import Config, get_config, SlackClientWrapper
 from processing.helpers import Context
 
 DEFAULT_ENV = {
@@ -31,7 +31,7 @@ def config() -> Config:
 
 @pytest.fixture(scope='module')
 def context(key_value_store: RedisKeyValueStore, config: Config) -> Context:
-    context = Context(store=key_value_store, config=config, gsheets=None)
+    context = Context(store=key_value_store, config=config, gsheets=None,  slack_client=SlackClientWrapper())
     return context
 
 @pytest.fixture(scope='function')
