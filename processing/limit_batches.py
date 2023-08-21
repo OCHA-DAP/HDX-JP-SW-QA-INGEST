@@ -42,8 +42,10 @@ def limit(context: Context, event: Dict) -> bool:
     # We need to block these events
     else:
         cached_data = {key: event[key] for key in batches_datasets_fields}
-        logger.warning(f'Limiting N8N/JIRA because of too many events for org "{event["org_name"]}". '
-                       f'Blocking dataset "{event["dataset_name"]}"')
+        limiting_message = f'Limiting N8N/JIRA processing for org "{event["org_name"]}" because of too many events. ' + \
+                        f'Blocked event for dataset "{event["dataset_name"]}"'
+        logger.warning(limiting_message)
+        context.slack_client.post_to_slack_channel(limiting_message)
 
         # if there's no batch of datasets in redis then we need to update the timestamp to say that we're starting now
         if not context.store.exists(batches_datasets_redis_key):
@@ -65,8 +67,10 @@ def limit(context: Context, event: Dict) -> bool:
             if datasets_map:
                 dataset_infos = [json.loads(item) for item in datasets_map.values()]
                 list_of_datasets_as_string = ', '.join((item['dataset_name'] for item in dataset_infos))
-                logger.info('The following datasets will be pushed to the "Too Many Datasets" '
-                            f'google sheet: {list_of_datasets_as_string}')
+                message_too_many_datasets = 'The following datasets will be pushed to the "Too Many Datasets" ' + \
+                                            f'google sheet: {list_of_datasets_as_string}'
+                logger.info(message_too_many_datasets)
+                context.slack_client.post_to_slack_channel(message_too_many_datasets)
                 # write to spreadsheet
                 _process_notification(context, dataset_infos)
 

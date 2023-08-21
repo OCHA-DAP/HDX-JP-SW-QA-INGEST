@@ -3,7 +3,7 @@ import logging
 from dataclasses import dataclass
 from hdx_redis_lib import RedisKeyValueStore
 from gspread.client import Client
-from config.config import Config
+from config.config import Config, SlackClientWrapper
 from processing.fetching import fetch_values
 
 logger = logging.getLogger(__name__)
@@ -14,6 +14,7 @@ class Context:
     store: RedisKeyValueStore
     config: Config
     gsheets: Client
+    slack_client: SlackClientWrapper
 
 
 def generic_string_in_set_with_cache(context:Context, search_string: str, cache_key: str, worksheet_name:str,
