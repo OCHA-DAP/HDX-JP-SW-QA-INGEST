@@ -24,9 +24,11 @@ def flag_if_on_watchlist(context: Context, event: Dict):
 def _user_in_watchlist(context: Context, username: str) -> bool:
     return generic_string_in_set_with_cache(context, username, REDIS_KEY_CACHE_WATCHED_USERS,
                                             context.config.SHEET_NAME_WATCHED_USERS,
-                                            context.config.COL_INDEX_WATCHED_USERS)
+                                            context.config.COL_INDEX_WATCHED_USERS,
+                                            expire_in_seconds=60*60)
 
 def _org_in_watchlist(context: Context, org_id: str) -> bool:
     return generic_string_in_set_with_cache(context, org_id, REDIS_KEY_CACHE_WATCHED_ORGS,
                                             context.config.SHEET_NAME_WATCHED_ORGS,
-                                            context.config.COL_INDEX_WATCHED_ORGS)
+                                            context.config.COL_INDEX_WATCHED_ORGS,
+                                            expire_in_seconds=60*60)
