@@ -45,7 +45,7 @@ def limit(context: Context, event: Dict) -> bool:
         limiting_message = f'Limiting N8N/JIRA processing for org "{event["org_name"]}" because of too many events. ' + \
                         f'Blocked event for dataset "{event["dataset_name"]}"'
         logger.warning(limiting_message)
-        context.slack_client.post_to_slack_channel(limiting_message)
+        # context.slack_client.post_to_slack_channel(limiting_message)
 
         # if there's no batch of datasets in redis then we need to update the timestamp to say that we're starting now
         if not context.store.exists(batches_datasets_redis_key) or not context.store.exists(batches_timestamp_redis_key):
