@@ -152,18 +152,18 @@ def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column
     try:
         sh = gc.open(spreadsheet_name)
     except APIError:
-        logger.info('Error! Invalid spreadsheet name ({}).'.format(spreadsheet_name))
+        logger.error('Error! Invalid spreadsheet name ({}).'.format(spreadsheet_name))
         return False
 
     try:
         worksheet = sh.worksheet(sheet_name)
     except WorksheetNotFound:
-        logger.info('Error! Worksheet ({}) not found.'.format(sheet_name))
+        logger.error('Error! Worksheet ({}) not found.'.format(sheet_name))
         return False
 
     column_names = worksheet.row_values('1')
     if pk_column not in column_names:
-        logger.info('Error! Column names ({}) doesn\'t contain PK ({}).'.format(', '.join(column_names), pk_column))
+        logger.error('Error! Column names ({}) doesn\'t contain PK ({}).'.format(', '.join(column_names), pk_column))
         return False
 
     col_positions = {}
@@ -173,7 +173,7 @@ def _update_gsheet(gc: Client, spreadsheet_name: str, sheet_name: str, pk_column
     new_rows = []
     for row_data in rows_data:
         if pk_column not in row_data.keys():
-            logger.info('Error! Data ({}) doesn\'t contain PK ({}).'.format(', '.join(row_data.keys()), pk_column))
+            logger.error('Error! Data ({}) doesn\'t contain PK ({}).'.format(', '.join(row_data.keys()), pk_column))
             return False
 
         new_row = []
