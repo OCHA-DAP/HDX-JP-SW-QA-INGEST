@@ -49,4 +49,5 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
+          no-cache: true
           tags: public.ecr.aws/unocha/hdx-jp-sw-qa-ingest:${{ steps.tag_info.outputs.IMAGE_TAG }}
