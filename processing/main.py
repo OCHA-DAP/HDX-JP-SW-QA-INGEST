@@ -5,6 +5,7 @@ from processing.limit_batches import limit
 from processing.filtering import filter_out
 from processing.watchlists import flag_if_on_watchlist
 from processing.populating import populate_changed_fields, populate_with_redis_key
+from processing.sdd_event import send_sdd_event
 from processing.spliting import split_each_field_own_event
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ def process(context: Context, event: Dict):
     flag_if_on_watchlist(context, event)
 
     populate_changed_fields(event)
+
+    send_sdd_event(event)
 
     events = split_each_field_own_event(context, event)
 
